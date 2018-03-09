@@ -52,7 +52,7 @@ class LocationInput extends InputWidget
         $html = Html::beginTag('div', $this->containerOptions);
         $html .= Html::endTag('div');
         if(!$this->disableLocationPicker){
-            $html .= $this->renderInputHtml('hidden');
+            $html .= $this->renderInputHtml('text');
         }
         return $html;
     }
@@ -87,7 +87,7 @@ function initMap() {
         let m = {$markerOptions};
         marker = new google.maps.Marker($.extend( true, arr, m));
         marker.addListener("dragend", e => {
-           changePos(e.latLng.lat()+","+e.latLng.lng());
+           changePos(e.latLng.lat()+""{$this->latLanDivider}""+e.latLng.lng());
         });
     }
     
@@ -110,7 +110,7 @@ function initMap() {
         
         function changePos(latLan) {
             position = latLan;
-            $("#{$this->getId()}").val(latLan);
+            $("#{$this->getId()}").val(latLan).trigger('change');
         }
     }
 }
