@@ -1,0 +1,24 @@
+
+{
+	"name": "aminkt/yii2-map-location-picker",
+	"description": "A widget based on https://innostudio.de/fileuploader to create a file input to upload files for yii2 framework",
+  	"keywords": ["yii", "yii2", "google map", "location", "location picker", "map"],
+	"type": "yii2-extension",
+	"support": {
+		"source": "https://github.com/aminkt/yii2-map-location-picker"
+	},
+	"authors": [
+		{
+			"name": "Amin Keshavarz",
+			"email": "ak_1596@yahoo.com"
+		}
+	],
+	"require": {
+		"yiisoft/yii2": "*"
+	},
+	"autoload": {
+		"psr-4": {
+			"aminkt\\widgets\\google\\map\\": ""
+		}
+	}
+}
