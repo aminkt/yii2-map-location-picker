@@ -52,6 +52,11 @@ class LocationInput extends InputWidget
         $html = Html::beginTag('div', $this->containerOptions);
         $html .= Html::endTag('div');
         $html .= $this->renderInputHtml('hidden');
+        $html .= Html::input('hidden', 'StaticPageForm[zoom]', '', [
+            'id' => 'staticpageform-zoom',
+            'class' => 'form-control inline-editable',
+        ]);
+
         $html .= Html::input('text', 'city-search', '', [
             'id' => 'pac-input',
             'class' => 'controls',
@@ -98,6 +103,8 @@ function initMap() {
     
     google.maps.event.addListener(map, 'click', function(event) {
         changePos(event.latLng.lat()+"{$this->latLanDivider}"+event.latLng.lng());
+        var zoom = map.getZoom();
+            changeZoom(zoom);
         if(marker){
            marker.setMap(null);
         }
@@ -138,7 +145,9 @@ function initMap() {
           // For each place, get the icon, name and location.
         var bounds = new google.maps.LatLngBounds();
         places.forEach(function(place) {
-            document.getElementById('staticpageform-map').value= place.geometry.location.lat()+","+place.geometry.location.lng();
+            changePos(place.geometry.location.lat()+"{$this->latLanDivider}"+place.geometry.location.lng());
+            var zoom = map.getZoom();
+            changeZoom(zoom);
 
             if (!place.geometry) {
               console.log("Returned place contains no geometry");
@@ -168,6 +177,11 @@ function initMap() {
     function changePos(latLan) {
         position = latLan;
         $("#{$this->getId()}").val(latLan).trigger('change');
+    }
+    
+    function changeZoom(zoom) {
+        
+        $("#staticpageform-zoom").val(zoom).trigger('change');
     }
 }
 JS;
