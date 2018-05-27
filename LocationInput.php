@@ -56,7 +56,6 @@ class LocationInput extends InputWidget
             'id' => 'staticpageform-zoom',
             'class' => 'form-control inline-editable',
         ]);
-
         $html .= Html::input('text', 'city-search', '', [
             'id' => 'pac-input',
             'class' => 'controls',
@@ -180,7 +179,6 @@ function initMap() {
     }
     
     function changeZoom(zoom) {
-        
         $("#staticpageform-zoom").val(zoom).trigger('change');
     }
 }
