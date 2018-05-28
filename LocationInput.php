@@ -51,11 +51,14 @@ class LocationInput extends InputWidget
         $this->registerJs();
         $html = Html::beginTag('div', $this->containerOptions);
         $html .= Html::endTag('div');
-        $html .= $this->renderInputHtml('hidden');
-        $html .= Html::input('hidden', 'StaticPageForm[zoom]', '', [
-            'id' => 'staticpageform-zoom',
-            'class' => 'form-control inline-editable',
-        ]);
+        if($this->hasModel()){
+            $inputName = Html::getInputName($this->model , $this->attribute);
+        }else{
+            $inputName = $this->name;
+        }
+        $html .= Html::hiddenInput($inputName.'[latitude]' , null, ['id' => 'latitude']);
+        $html .= Html::hiddenInput($inputName.'[longitude]',null, ['id' => 'longitude']);
+        $html .= Html::hiddenInput($inputName.'[zoom]', null, ['id' => 'zoom']);
         $html .= Html::input('text', 'city-search', '', [
             'id' => 'pac-input',
             'class' => 'controls',
@@ -175,11 +178,12 @@ function initMap() {
         
     function changePos(latLan) {
         position = latLan;
-        $("#{$this->getId()}").val(latLan).trigger('change');
+        latLan = position.split("{$this->latLanDivider}");
+        $("#latitude").val(latLan[0]).trigger('change');
+        $("#longitude").val(latLan[1]).trigger('change');
     }
-    
     function changeZoom(zoom) {
-        $("#staticpageform-zoom").val(zoom).trigger('change');
+        $("#zoom").val(zoom).trigger('change');
     }
 }
 JS;
