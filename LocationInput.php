@@ -33,14 +33,14 @@ class LocationInput extends InputWidget
     {
         parent::init();
 
-        if(isset($this->options['id'])){
+        if (isset($this->options['id'])) {
             $this->id = $this->options['id'];
         }
 
-        if(!isset($this->containerOptions['id'])){
-            $this->containerOptions['id'] = $this->getId()."-container";
+        if (!isset($this->containerOptions['id'])) {
+            $this->containerOptions['id'] = $this->getId() . "-container";
         }
-        if(!isset($this->containerOptions['style'])){
+        if (!isset($this->containerOptions['style'])) {
             $this->containerOptions['style'] = 'width:' . $this->width . '; height:' . $this->height . ';';
         }
     }
@@ -51,9 +51,23 @@ class LocationInput extends InputWidget
         $this->registerJs();
         $html = Html::beginTag('div', $this->containerOptions);
         $html .= Html::endTag('div');
-        if(!$this->disableLocationPicker){
-            $html .= $this->renderInputHtml('hidden');
+        if($this->hasModel()){
+            $inputName = Html::getInputName($this->model , $this->attribute);
+        }else{
+            $inputName = $this->name;
         }
+        if(!$this->disableLocationPicker) {
+            $html .= Html::hiddenInput($inputName . '[latitude]', null, ['id' => 'latitude']);
+            $html .= Html::hiddenInput($inputName . '[longitude]', null, ['id' => 'longitude']);
+            $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => 'zoom']);
+            $html .= Html::input('text', 'city-search', '', [
+                'id' => 'pac-input',
+                'class' => 'controls',
+                'placeholder' => 'نام یا مختصات شهر ...',
+                'size' => '100',
+            ]);
+        }
+
         return $html;
     }
 
@@ -94,6 +108,8 @@ function initMap() {
     if(!{$this->disableLocationPicker}){
         google.maps.event.addListener(map, 'click', function(event) {
             changePos(event.latLng.lat()+"{$this->latLanDivider}"+event.latLng.lng());
+            var zoom = map.getZoom();
+            changeZoom(zoom);
             if(marker){
                 marker.setMap(null);
             }
@@ -104,19 +120,79 @@ function initMap() {
             let m = {$markerOptions};
             marker = new google.maps.Marker($.extend( true, arr, m));
             marker.addListener("dragend", e => {
-               changePos(e.latLng.lat()+"{$this->latLanDivider}"+e.latLng.lng());
+                changePos(e.latLng.lat()+"{$this->latLanDivider}"+e.latLng.lng());
             });
         });
+                
+        var input = document.getElementById('pac-input');
+        var searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
         
-        function changePos(latLan) {
-            position = latLan;
-            $("#{$this->getId()}").val(latLan).trigger('change');
-        }
+
+        // Bias the SearchBox results towards current map's viewport.
+        map.addListener('bounds_changed', function() {
+            searchBox.setBounds(map.getBounds());
+        });
+
+        // Listen for the event fired when the user selects a prediction and retrieve
+        // more details for that place.
+        searchBox.addListener('places_changed', function() {
+            var places = searchBox.getPlaces();
+
+            if (places.length == 0) {
+                return;
+            }
+            // clear marker of dragged location
+            if (marker) {
+                marker.setMap(null);
+            }
+          
+            // For each place, get the icon, name and location.
+            var bounds = new google.maps.LatLngBounds();
+            places.forEach(function(place) {
+                changePos(place.geometry.location.lat()+"{$this->latLanDivider}"+place.geometry.location.lng());
+                var zoom = map.getZoom();
+                changeZoom(zoom);
+
+                if (!place.geometry) {
+                console.log("Returned place contains no geometry");
+                return;
+                }
+
+                let arr = {
+                    position: place.geometry.location,
+                    map: map
+                };
+                let m = {$markerOptions};
+                marker = new google.maps.Marker($.extend( true, arr, m));
+                marker.addListener("dragend", e => {
+                    changePos(e.latLng.lat()+"{$this->latLanDivider}"+e.latLng.lng());
+                });
+            
+                if (place.geometry.viewport) {
+                // Only geocodes have viewport.
+                    bounds.union(place.geometry.viewport);
+                } else {
+                    bounds.extend(place.geometry.location);
+                }
+            });
+            map.fitBounds(bounds);
+        });
+    }
+        
+    function changePos(latLan) {
+        position = latLan;
+        latLan = position.split("{$this->latLanDivider}");
+        $("#latitude").val(latLan[0]).trigger('change');
+        $("#longitude").val(latLan[1]).trigger('change');
+    }
+    function changeZoom(zoom) {
+        $("#zoom").val(zoom).trigger('change');
     }
 }
 JS;
         $this->getView()->registerJs($js, View::POS_HEAD);
-        $this->getView()->registerJsFile('https://maps.googleapis.com/maps/api/js?key=' . $this->apiKey . '&callback=initMap',
+        $this->getView()->registerJsFile('https://maps.googleapis.com/maps/api/js?key=' . $this->apiKey . '&libraries=places' . '&callback=initMap',
             ['async' => true, 'defer' => true]);
     }
 
