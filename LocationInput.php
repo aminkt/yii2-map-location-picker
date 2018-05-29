@@ -56,15 +56,17 @@ class LocationInput extends InputWidget
         }else{
             $inputName = $this->name;
         }
-        $html .= Html::hiddenInput($inputName.'[latitude]' , null, ['id' => 'latitude']);
-        $html .= Html::hiddenInput($inputName.'[longitude]',null, ['id' => 'longitude']);
-        $html .= Html::hiddenInput($inputName.'[zoom]', null, ['id' => 'zoom']);
-        $html .= Html::input('text', 'city-search', '', [
-            'id' => 'pac-input',
-            'class' => 'controls',
-            'placeholder' => 'نام یا مختصات شهر ...',
-            'size' => '100',
-        ]);
+        if(!$this->disableLocationPicker) {
+            $html .= Html::hiddenInput($inputName . '[latitude]', null, ['id' => 'latitude']);
+            $html .= Html::hiddenInput($inputName . '[longitude]', null, ['id' => 'longitude']);
+            $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => 'zoom']);
+            $html .= Html::input('text', 'city-search', '', [
+                'id' => 'pac-input',
+                'class' => 'controls',
+                'placeholder' => 'نام یا مختصات شهر ...',
+                'size' => '100',
+            ]);
+        }
 
         return $html;
     }
@@ -103,61 +105,16 @@ function initMap() {
         });
     }
     
-    google.maps.event.addListener(map, 'click', function(event) {
-        changePos(event.latLng.lat()+"{$this->latLanDivider}"+event.latLng.lng());
-        var zoom = map.getZoom();
-            changeZoom(zoom);
-        if(marker){
-           marker.setMap(null);
-        }
-        let arr = {
-           position: event.latLng,
-           map: map
-        };
-        let m = {$markerOptions};
-        marker = new google.maps.Marker($.extend( true, arr, m));
-        marker.addListener("dragend", e => {
-           changePos(e.latLng.lat()+"{$this->latLanDivider}"+e.latLng.lng());
-        });
-    });
-                
-    var input = document.getElementById('pac-input');
-    var searchBox = new google.maps.places.SearchBox(input);
-    map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
-        
-
-        // Bias the SearchBox results towards current map's viewport.
-    map.addListener('bounds_changed', function() {
-        searchBox.setBounds(map.getBounds());
-    });
-
-        // Listen for the event fired when the user selects a prediction and retrieve
-        // more details for that place.
-    searchBox.addListener('places_changed', function() {
-        var places = searchBox.getPlaces();
-
-        if (places.length == 0) {
-            return;
-        }
-          // clear marker of dragged location
-        if (marker) {
-            marker.setMap(null);
-        }
-          
-          // For each place, get the icon, name and location.
-        var bounds = new google.maps.LatLngBounds();
-        places.forEach(function(place) {
-            changePos(place.geometry.location.lat()+"{$this->latLanDivider}"+place.geometry.location.lng());
+    if(!{$this->disableLocationPicker}){
+        google.maps.event.addListener(map, 'click', function(event) {
+            changePos(event.latLng.lat()+"{$this->latLanDivider}"+event.latLng.lng());
             var zoom = map.getZoom();
             changeZoom(zoom);
-
-            if (!place.geometry) {
-              console.log("Returned place contains no geometry");
-              return;
+            if(marker){
+                marker.setMap(null);
             }
-
             let arr = {
-                position: place.geometry.location,
+                position: event.latLng,
                 map: map
             };
             let m = {$markerOptions};
@@ -165,16 +122,63 @@ function initMap() {
             marker.addListener("dragend", e => {
                 changePos(e.latLng.lat()+"{$this->latLanDivider}"+e.latLng.lng());
             });
-            
-            if (place.geometry.viewport) {
-              // Only geocodes have viewport.
-                bounds.union(place.geometry.viewport);
-            } else {
-                bounds.extend(place.geometry.location);
-            }
         });
-          map.fitBounds(bounds);
-    });
+                
+        var input = document.getElementById('pac-input');
+        var searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+        
+
+        // Bias the SearchBox results towards current map's viewport.
+        map.addListener('bounds_changed', function() {
+            searchBox.setBounds(map.getBounds());
+        });
+
+        // Listen for the event fired when the user selects a prediction and retrieve
+        // more details for that place.
+        searchBox.addListener('places_changed', function() {
+            var places = searchBox.getPlaces();
+
+            if (places.length == 0) {
+                return;
+            }
+            // clear marker of dragged location
+            if (marker) {
+                marker.setMap(null);
+            }
+          
+            // For each place, get the icon, name and location.
+            var bounds = new google.maps.LatLngBounds();
+            places.forEach(function(place) {
+                changePos(place.geometry.location.lat()+"{$this->latLanDivider}"+place.geometry.location.lng());
+                var zoom = map.getZoom();
+                changeZoom(zoom);
+
+                if (!place.geometry) {
+                console.log("Returned place contains no geometry");
+                return;
+                }
+
+                let arr = {
+                    position: place.geometry.location,
+                    map: map
+                };
+                let m = {$markerOptions};
+                marker = new google.maps.Marker($.extend( true, arr, m));
+                marker.addListener("dragend", e => {
+                    changePos(e.latLng.lat()+"{$this->latLanDivider}"+e.latLng.lng());
+                });
+            
+                if (place.geometry.viewport) {
+                // Only geocodes have viewport.
+                    bounds.union(place.geometry.viewport);
+                } else {
+                    bounds.extend(place.geometry.location);
+                }
+            });
+            map.fitBounds(bounds);
+        });
+    }
         
     function changePos(latLan) {
         position = latLan;
