@@ -26,12 +26,18 @@ class LocationInput extends InputWidget
     public $mapOptions = [];
     public $markerOptions = [];
     public $latLanDivider = ',';
+    public $searchInputOptions = [];
     public $disableLocationPicker = 0;
 
 
     public function init()
     {
         parent::init();
+
+        if($this->hasModel()){
+            $attr = $this->attribute;
+            $this->value = $this->model->$attr;
+        }
 
         if (isset($this->options['id'])) {
             $this->id = $this->options['id'];
@@ -42,6 +48,18 @@ class LocationInput extends InputWidget
         }
         if (!isset($this->containerOptions['style'])) {
             $this->containerOptions['style'] = 'width:' . $this->width . '; height:' . $this->height . ';';
+        }
+
+        if($this->value and $zoom = $this->value['zoom']){
+            $this->mapOptions['zoom'] = (integer) $zoom;
+        }
+
+        if(!isset($this->searchInputOptions['id'])){
+            $this->searchInputOptions['id'] = $this->getId().'-search-input';
+        }
+
+        if(!isset($this->searchInputOptions['placeholder'])){
+            $this->searchInputOptions['placeholder'] = 'نام یا مختصات شهر ...';
         }
     }
 
@@ -60,12 +78,7 @@ class LocationInput extends InputWidget
             $html .= Html::hiddenInput($inputName . '[latitude]', null, ['id' => 'latitude']);
             $html .= Html::hiddenInput($inputName . '[longitude]', null, ['id' => 'longitude']);
             $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => 'zoom']);
-            $html .= Html::input('text', 'city-search', '', [
-                'id' => 'pac-input',
-                'class' => 'controls',
-                'placeholder' => 'نام یا مختصات شهر ...',
-                'size' => '100',
-            ]);
+            $html .= Html::input('text', 'city-search', '', $this->searchInputOptions);
         }
 
         return $html;
@@ -76,13 +89,19 @@ class LocationInput extends InputWidget
         $containerId = $this->containerOptions['id'];
         $mapOptions = Json::encode($this->mapOptions);
 
-        \Yii::warning($mapOptions);
+        if($this->value and isset($this->value['latitude']) and isset($this->value['longitude'])){
+            $position = $this->value['latitude'].$this->latLanDivider.$this->value['longitude'];
+        }else{
+            $position = null;
+        }
 
         $markerOptions = Json::encode($this->markerOptions);
+
+        $searchInputId = $this->searchInputOptions['id'];
         $js = <<<JS
 let map;
 let marker;
-let position = "{$this->value}";
+let position = "$position";
 
 function initMap() {
     map = new google.maps.Map(document.getElementById("{$containerId}"), $mapOptions);
@@ -124,7 +143,7 @@ function initMap() {
             });
         });
                 
-        var input = document.getElementById('pac-input');
+        var input = document.getElementById('$searchInputId');
         var searchBox = new google.maps.places.SearchBox(input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
         
