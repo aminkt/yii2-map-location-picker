@@ -26,6 +26,7 @@ class LocationInput extends InputWidget
     public $mapOptions = [];
     public $markerOptions = [];
     public $latLanDivider = ',';
+    public $arrayMode = true;
     public $searchInputOptions = [];
     public $disableLocationPicker = 0;
 
@@ -50,7 +51,7 @@ class LocationInput extends InputWidget
             $this->containerOptions['style'] = 'width:' . $this->width . '; height:' . $this->height . ';';
         }
 
-        if($this->value and $zoom = $this->value['zoom']){
+        if($this->value and isset($this->value['zoom']) and $zoom = $this->value['zoom']){
             $this->mapOptions['zoom'] = (integer) $zoom;
         }
 
@@ -75,11 +76,16 @@ class LocationInput extends InputWidget
             $inputName = $this->name;
         }
         if(!$this->disableLocationPicker) {
-            $html .= Html::hiddenInput($inputName . '[latitude]', null, ['id' => 'latitude']);
-            $html .= Html::hiddenInput($inputName . '[longitude]', null, ['id' => 'longitude']);
-            $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => 'zoom']);
-            $html .= Html::input('text', 'city-search', '', $this->searchInputOptions);
+            if($this->arrayMode){
+                $html .= Html::hiddenInput($inputName . '[latitude]', null, ['id' => $this->getId().'-latitude-input']);
+                $html .= Html::hiddenInput($inputName . '[longitude]', null, ['id' => $this->getId().'-longitude-input']);
+                $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => $this->getId().'-zoominput']);
+            }else{
+                $html .= $this->renderInputHtml('hidden');
+            }
         }
+
+        $html .= Html::input('text', 'city-search', '', $this->searchInputOptions);
 
         return $html;
     }
@@ -89,11 +95,16 @@ class LocationInput extends InputWidget
         $containerId = $this->containerOptions['id'];
         $mapOptions = Json::encode($this->mapOptions);
 
-        if($this->value and isset($this->value['latitude']) and isset($this->value['longitude'])){
-            $position = $this->value['latitude'].$this->latLanDivider.$this->value['longitude'];
+        if($this->arrayMode){
+            if($this->value and isset($this->value['latitude']) and isset($this->value['longitude'])){
+                $position = $this->value['latitude'].$this->latLanDivider.$this->value['longitude'];
+            }else{
+                $position = null;
+            }
         }else{
-            $position = null;
+            $position = $this->value;
         }
+
 
         $markerOptions = Json::encode($this->markerOptions);
 
@@ -202,11 +213,19 @@ function initMap() {
     function changePos(latLan) {
         position = latLan;
         latLan = position.split("{$this->latLanDivider}");
-        $("#latitude").val(latLan[0]).trigger('change');
-        $("#longitude").val(latLan[1]).trigger('change');
+        if($("#{$this->getId()}-latitude-input").length && $("#{$this->getId()}-longitudeinput-input").length){
+            $("#{$this->getId()}-latitude-input").val(latLan[0]).trigger('change');
+            $("#{$this->getId()}-longitude-input").val(latLan[1]).trigger('change');
+        }else if($("#{$this->getId()}").length){
+            $("#{$this->getId()}").val(position);
+        }else{
+            console.error("No input find to put position data into that.")
+        }
     }
     function changeZoom(zoom) {
-        $("#zoom").val(zoom).trigger('change');
+        if($("#{$this->getId()}-zoom-input").length){
+            $("#{$this->getId()}-zoom-input").val(zoom).trigger('change');
+        }
     }
 }
 JS;
