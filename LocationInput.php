@@ -79,7 +79,7 @@ class LocationInput extends InputWidget
             if($this->arrayMode){
                 $html .= Html::hiddenInput($inputName . '[latitude]', null, ['id' => $this->getId().'-latitude-input']);
                 $html .= Html::hiddenInput($inputName . '[longitude]', null, ['id' => $this->getId().'-longitude-input']);
-                $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => $this->getId().'-zoominput']);
+                $html .= Html::hiddenInput($inputName . '[zoom]', null, ['id' => $this->getId().'-zoom-input']);
             }else{
                 $html .= $this->renderInputHtml('hidden');
             }
@@ -96,7 +96,13 @@ class LocationInput extends InputWidget
         $mapOptions = Json::encode($this->mapOptions);
 
         if($this->arrayMode){
-            if($this->value and isset($this->value['latitude']) and isset($this->value['longitude'])){
+            if(
+                $this->value and
+                isset($this->value['latitude']) and
+                $this->value['latitude'] and
+                isset($this->value['longitude']) and
+                $this->value['longitude']
+            ){
                 $position = $this->value['latitude'].$this->latLanDivider.$this->value['longitude'];
             }else{
                 $position = null;
@@ -213,7 +219,7 @@ function initMap() {
     function changePos(latLan) {
         position = latLan;
         latLan = position.split("{$this->latLanDivider}");
-        if($("#{$this->getId()}-latitude-input").length && $("#{$this->getId()}-longitudeinput-input").length){
+        if($("#{$this->getId()}-latitude-input").length && $("#{$this->getId()}-longitude-input").length){
             $("#{$this->getId()}-latitude-input").val(latLan[0]).trigger('change');
             $("#{$this->getId()}-longitude-input").val(latLan[1]).trigger('change');
         }else if($("#{$this->getId()}").length){
